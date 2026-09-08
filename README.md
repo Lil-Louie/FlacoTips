@@ -1,36 +1,195 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FlaccoTips --- Tip Tracker & Analytics Dashboard
+
+FlaccoTips is a personal tip-tracking and earnings analytics dashboard
+built for servers and tipped workers.
+
+Instead of simply recording tips, the goal of the project is to turn
+shift data into useful insights about earnings, tip performance, sales,
+hours worked, and long-term trends.
+
+## Features
+
+-   Log individual work shifts
+-   Track cash and credit card tips separately
+-   Track total sales
+-   Track hours worked
+-   Track tables served
+-   Track tip-outs
+-   Include hourly wages in total earnings
+-   Switch between **All Tips** and **Card Only**
+-   View earnings across different time periods
+-   Navigate between previous and future periods
+-   Visualize earnings with interactive charts
+-   View summary statistics for selected periods
+
+## Analytics
+
+FlaccoTips calculates useful metrics from raw shift data, including:
+
+-   Total earnings
+-   Gross tips
+-   Net tips after tip-out
+-   Average tip percentage
+-   Tips per hour
+-   Earnings per hour
+-   Total sales
+-   Total tables served
+
+Rather than storing calculated statistics, the application stores
+individual shift data and derives analytics dynamically.
+
+This allows the same data to be analyzed across different time ranges.
+
+## Time-Based Analysis
+
+The dashboard supports:
+
+-   Day
+-   Week
+-   Month
+-   Year
+
+Changing the selected period updates the dashboard metrics, graphs, and
+shift history.
+
+Users can also navigate backward and forward through periods to compare
+performance over time.
+
+## Cash Tip Toggle
+
+Cash tips and credit card tips are stored separately.
+
+The dashboard includes an **All Tips / Card Only** toggle that allows
+analytics to be recalculated with or without cash tips.
+
+This makes it possible to compare recorded card income with actual
+earnings including cash.
+
+## Tech Stack
+
+-   Next.js 16
+-   React 19
+-   TypeScript
+-   Tailwind CSS
+-   Recharts
+-   Supabase
+-   PostgreSQL
+-   date-fns
+-   React Compiler
+
+## Project Structure
+
+``` text
+tip-tracker/
+├── app/
+│   ├── dashboard/
+│   │   └── page.tsx
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/
+│   └── dashboard/
+│       ├── AnalyticsChart.tsx
+│       ├── CashTipsToggle.tsx
+│       ├── MetricCards.tsx
+│       ├── ShiftForm.tsx
+│       └── TimeRangeSelector.tsx
+├── lib/
+│   ├── analytics.ts
+│   └── supabase.ts
+└── public/
+```
+
+## Database
+
+Each shift stores raw data such as:
+
+-   Date
+-   Shift type
+-   Hours worked
+-   Tables served
+-   Total sales
+-   Credit tips
+-   Cash tips
+-   Tip out
+-   Hourly wage
+
+Analytics are then calculated from these values rather than being stored
+separately.
+
+## Environment Variables
+
+Create a `.env.local` file in the root of the project:
+
+``` env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_publishable_key
+```
+
+Do not commit `.env.local` or private credentials to GitHub.
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+``` bash
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Start the development server:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+``` bash
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open:
 
-## Learn More
+``` text
+http://localhost:3000/dashboard
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Planned Features
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+FlaccoTips is currently under active development.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+-   Multiple graph metrics
+-   Tip percentage graphs
+-   Tips-per-hour graphs
+-   Sales graphs
+-   Earnings-per-hour graphs
+-   Week-over-week comparisons
+-   Month-over-month comparisons
+-   Earnings projections
+-   Shift editing and deletion
+-   Better mobile dashboard
+-   Authentication
+-   Secure user-specific data
+-   Historical trend analysis
+-   Income forecasting
+-   More advanced statistics
 
-## Deploy on Vercel
+## Long-Term Goal
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The long-term goal is to build FlaccoTips into more than a tip log.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+With enough historical shift data, the dashboard can answer questions
+such as:
+
+-   Which days generate the highest earnings?
+-   Are lunch or dinner shifts more profitable?
+-   How much am I actually earning per hour?
+-   Does serving more tables affect my average tip percentage?
+-   How much do cash tips contribute to my income?
+-   Are my tips improving over time?
+-   What should I expect to earn next week or next month?
+-   Which types of shifts provide the best return for time worked?
+
+The project combines practical personal finance tracking with data
+visualization and statistical analysis.
+
+## Status
+
+🚧 **MVP / Active Development**
+
+The core dashboard, shift tracking, time filtering, cash-tip filtering,
+and analytics system are currently being developed.

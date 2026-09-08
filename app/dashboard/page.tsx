@@ -6,6 +6,15 @@ import {
   useState,
 } from "react";
 
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
+
 import AnalyticsChart from "@/components/dashboard/AnalyticsChart";
 import CashTipsToggle from "@/components/dashboard/CashTipsToggle";
 import MetricCards from "@/components/dashboard/MetricCards";
@@ -27,13 +36,16 @@ import { supabase } from "@/lib/supabase";
 type NewShift = Omit<Shift, "id">;
 
 export default function DashboardPage() {
-  const [shifts, setShifts] = useState<Shift[]>(
-    []
-  );
-
+  const [shifts, setShifts] = useState<Shift[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [showShiftForm, setShowShiftForm] =
+    useState(false);
+
+  const [showFilters, setShowFilters] =
+    useState(false);
+
+  const [showHistory, setShowHistory] =
     useState(false);
 
   const [error, setError] = useState<
@@ -68,16 +80,13 @@ export default function DashboardPage() {
       );
 
       setLoading(false);
-
       return;
     }
 
     const formattedShifts: Shift[] =
       (data ?? []).map((shift) => ({
         id: shift.id,
-
         date: shift.date,
-
         shiftType: shift.shift_type,
 
         hoursWorked: Number(
@@ -110,7 +119,6 @@ export default function DashboardPage() {
       }));
 
     setShifts(formattedShifts);
-
     setLoading(false);
   }
 
@@ -127,29 +135,14 @@ export default function DashboardPage() {
       .from("shifts")
       .insert({
         date: shift.date,
-
         shift_type: shift.shiftType,
-
-        hours_worked:
-          shift.hoursWorked,
-
-        tables_served:
-          shift.tablesServed,
-
-        total_sales:
-          shift.totalSales,
-
-        credit_tips:
-          shift.creditTips,
-
-        cash_tips:
-          shift.cashTips,
-
-        tip_out:
-          shift.tipOut,
-
-        hourly_wage:
-          shift.hourlyWage,
+        hours_worked: shift.hoursWorked,
+        tables_served: shift.tablesServed,
+        total_sales: shift.totalSales,
+        credit_tips: shift.creditTips,
+        cash_tips: shift.cashTips,
+        tip_out: shift.tipOut,
+        hourly_wage: shift.hourlyWage,
       });
 
     if (error) {
@@ -165,7 +158,9 @@ export default function DashboardPage() {
     setShowShiftForm(false);
 
     setAnchorDate(
-      new Date(`${shift.date}T12:00:00`)
+      new Date(
+        `${shift.date}T12:00:00`
+      )
     );
 
     await loadShifts();
@@ -187,7 +182,10 @@ export default function DashboardPage() {
         filteredShifts,
         includeCashTips
       ),
-    [filteredShifts, includeCashTips]
+    [
+      filteredShifts,
+      includeCashTips,
+    ]
   );
 
   const chartData = useMemo(
@@ -202,10 +200,13 @@ export default function DashboardPage() {
         return {
           label: new Date(
             `${shift.date}T12:00:00`
-          ).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          }),
+          ).toLocaleDateString(
+            "en-US",
+            {
+              month: "short",
+              day: "numeric",
+            }
+          ),
 
           earnings:
             metrics.totalEarnings,
@@ -225,37 +226,68 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-7xl space-y-6 px-6 py-8">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <main className="min-h-screen bg-background">
+      <div className="mx-auto max-w-7xl space-y-5 px-4 pb-28 pt-5 sm:px-6 sm:py-8 md:pb-8">
+
+        {/* HEADER */}
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">
+              Dashboard
+            </p>
+
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-navy sm:text-3xl">
               Tip Tracker
             </h1>
 
-            <p className="mt-1 text-gray-500">
-              Track your shifts, tips,
-              sales, and earnings.
+            <p className="mt-1 text-sm text-muted">
+              {getPeriodLabel(
+                range,
+                anchorDate
+              )}
             </p>
           </div>
 
+          {/* MOBILE FILTER BUTTON */}
           <button
+            type="button"
+            onClick={() =>
+              setShowFilters(true)
+            }
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-silver-light bg-white text-navy shadow-sm transition hover:bg-silver-light/40 md:hidden"
+            aria-label="Dashboard options"
+          >
+            <SlidersHorizontal
+              size={18}
+            />
+          </button>
+
+          {/* DESKTOP LOG SHIFT */}
+          <button
+            type="button"
             onClick={() =>
               setShowShiftForm(true)
             }
-            className="rounded-lg bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
+            className="hidden items-center gap-2 rounded-xl bg-navy px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-navy-light md:flex"
           >
-            + Log Shift
+            <Plus
+              size={17}
+              className="text-accent-red"
+            />
+
+            Log Shift
           </button>
         </div>
 
+        {/* ERROR */}
         {error && (
           <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
             {error}
           </div>
         )}
 
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        {/* DESKTOP FILTERS */}
+        <div className="hidden items-center justify-between gap-4 md:flex">
           <TimeRangeSelector
             range={range}
             onChange={changeRange}
@@ -271,8 +303,10 @@ export default function DashboardPage() {
           />
         </div>
 
-        <div className="flex items-center justify-between rounded-xl border bg-white px-5 py-3">
+        {/* DESKTOP PERIOD NAVIGATION */}
+        <div className="hidden items-center justify-center gap-3 md:flex">
           <button
+            type="button"
             onClick={() =>
               setAnchorDate((date) =>
                 movePeriod(
@@ -282,19 +316,23 @@ export default function DashboardPage() {
                 )
               )
             }
-            className="rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-100"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-silver-light bg-white text-navy transition hover:bg-silver-light/40"
+            aria-label="Previous period"
           >
-            ← Previous
+            <ChevronLeft size={18} />
           </button>
 
-          <p className="font-semibold">
-            {getPeriodLabel(
-              range,
-              anchorDate
-            )}
-          </p>
+          <div className="min-w-[150px] text-center">
+            <p className="text-sm font-semibold text-navy">
+              {getPeriodLabel(
+                range,
+                anchorDate
+              )}
+            </p>
+          </div>
 
           <button
+            type="button"
             onClick={() =>
               setAnchorDate((date) =>
                 movePeriod(
@@ -304,12 +342,83 @@ export default function DashboardPage() {
                 )
               )
             }
-            className="rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-100"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-silver-light bg-white text-navy transition hover:bg-silver-light/40"
+            aria-label="Next period"
           >
-            Next →
+            <ChevronRight size={18} />
           </button>
         </div>
 
+        {/* MOBILE PERIOD NAVIGATION */}
+        <div className="flex items-center justify-center gap-3 md:hidden">
+          <button
+            type="button"
+            onClick={() =>
+              setAnchorDate((date) =>
+                movePeriod(
+                  range,
+                  date,
+                  -1
+                )
+              )
+            }
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-silver-light bg-white text-navy shadow-sm transition active:scale-95"
+            aria-label="Previous period"
+          >
+            <ChevronLeft size={18} />
+          </button>
+
+          <div className="min-w-[155px] text-center">
+            <p className="text-sm font-semibold text-navy">
+              {getPeriodLabel(
+                range,
+                anchorDate
+              )}
+            </p>
+
+            <p className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.12em] text-muted">
+              {range}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() =>
+              setAnchorDate((date) =>
+                movePeriod(
+                  range,
+                  date,
+                  1
+                )
+              )
+            }
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-silver-light bg-white text-navy shadow-sm transition active:scale-95"
+            aria-label="Next period"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+
+        {/* CHART */}
+        {loading ? (
+          <div className="flex h-[360px] items-center justify-center rounded-2xl border border-silver-light bg-white">
+            <p className="text-muted">
+              Loading shifts...
+            </p>
+          </div>
+        ) : filteredShifts.length > 0 ? (
+          <AnalyticsChart
+            data={chartData}
+          />
+        ) : (
+          <div className="flex h-[360px] items-center justify-center rounded-2xl border border-silver-light bg-white">
+            <p className="text-muted">
+              No shifts logged for this period.
+            </p>
+          </div>
+        )}
+
+        {/* METRICS */}
         <MetricCards
           totalEarnings={
             summary.totalEarnings
@@ -325,137 +434,265 @@ export default function DashboardPage() {
           }
         />
 
-        {loading ? (
-          <div className="flex h-[360px] items-center justify-center rounded-xl border bg-white">
-            <p className="text-gray-500">
-              Loading shifts...
-            </p>
-          </div>
-        ) : filteredShifts.length >
-          0 ? (
-          <AnalyticsChart
-            data={chartData}
-          />
-        ) : (
-          <div className="flex h-[360px] items-center justify-center rounded-xl border bg-white">
-            <p className="text-gray-500">
-              No shifts logged for this
-              period.
-            </p>
-          </div>
-        )}
+        {/* SHIFT HISTORY */}
+        <div className="overflow-hidden rounded-2xl border border-silver-light bg-white shadow-sm">
+          <button
+            type="button"
+            onClick={() =>
+              setShowHistory(
+                (current) => !current
+              )
+            }
+            className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-silver-light/20"
+          >
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+                History
+              </p>
 
-        <div className="rounded-xl border bg-white shadow-sm">
-          <div className="border-b px-5 py-4">
-            <h2 className="font-semibold">
-              Shifts
-            </h2>
-          </div>
-
-          {filteredShifts.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              No shifts for this period.
+              <h2 className="mt-1 font-semibold text-navy">
+                Recent Shifts
+              </h2>
             </div>
-          ) : (
-            <div className="divide-y">
-              {[...filteredShifts]
-                .reverse()
-                .map((shift) => {
-                  const metrics =
-                    getShiftMetrics(
-                      shift,
-                      includeCashTips
+
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-medium text-muted">
+                {filteredShifts.length}{" "}
+                {filteredShifts.length === 1
+                  ? "shift"
+                  : "shifts"}
+              </span>
+
+              <ChevronDown
+                size={19}
+                className={`text-navy transition-transform duration-200 ${
+                  showHistory
+                    ? "rotate-180"
+                    : ""
+                }`}
+              />
+            </div>
+          </button>
+
+          <div
+            className={`overflow-hidden border-t border-silver-light transition-all duration-300 ${
+              showHistory
+                ? "max-h-[2000px] opacity-100"
+                : "max-h-0 border-t-0 opacity-0"
+            }`}
+          >
+            {filteredShifts.length === 0 ? (
+              <div className="p-8 text-center text-muted">
+                No shifts for this period.
+              </div>
+            ) : (
+              <div className="divide-y divide-silver-light">
+                {[...filteredShifts]
+                  .reverse()
+                  .map((shift) => {
+                    const metrics =
+                      getShiftMetrics(
+                        shift,
+                        includeCashTips
+                      );
+
+                    return (
+                      <div
+                        key={shift.id}
+                        className="px-5 py-4"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="font-semibold capitalize text-navy">
+                              {shift.shiftType}
+                            </p>
+
+                            <p className="mt-0.5 text-xs text-muted">
+                              {new Date(
+                                `${shift.date}T12:00:00`
+                              ).toLocaleDateString()}
+                            </p>
+                          </div>
+
+                          <div className="text-right">
+                            <p className="text-lg font-bold text-navy">
+                              $
+                              {metrics.totalEarnings.toFixed(
+                                2
+                              )}
+                            </p>
+
+                            <p className="text-[11px] text-muted">
+                              earned
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-3 gap-3 text-sm sm:grid-cols-4">
+                          <div>
+                            <p className="text-xs text-muted">
+                              Hours
+                            </p>
+
+                            <p className="mt-1 font-semibold text-navy">
+                              {shift.hoursWorked}
+                            </p>
+                          </div>
+
+                          <div>
+                            <p className="text-xs text-muted">
+                              Sales
+                            </p>
+
+                            <p className="mt-1 font-semibold text-navy">
+                              ${shift.totalSales.toFixed(2)}
+                            </p>
+                          </div>
+
+                          <div>
+                            <p className="text-xs text-muted">
+                              Tips
+                            </p>
+
+                            <p className="mt-1 font-semibold text-navy">
+                              ${metrics.netTips.toFixed(2)}
+                            </p>
+                          </div>
+
+                          <div className="hidden sm:block">
+                            <p className="text-xs text-muted">
+                              Earnings
+                            </p>
+
+                            <p className="mt-1 font-semibold text-navy">
+                              $
+                              {metrics.totalEarnings.toFixed(
+                                2
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     );
-
-                  return (
-                    <div
-                      key={shift.id}
-                      className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <div>
-                        <p className="font-medium capitalize">
-                          {
-                            shift.shiftType
-                          }
-                        </p>
-
-                        <p className="text-sm text-gray-500">
-                          {new Date(
-                            `${shift.date}T12:00:00`
-                          ).toLocaleDateString()}
-                        </p>
-                      </div>
-
-                      <div className="flex flex-wrap gap-8 text-sm">
-                        <div>
-                          <p className="text-gray-500">
-                            Hours
-                          </p>
-
-                          <p className="font-medium">
-                            {
-                              shift.hoursWorked
-                            }
-                          </p>
-                        </div>
-
-                        <div>
-                          <p className="text-gray-500">
-                            Sales
-                          </p>
-
-                          <p className="font-medium">
-                            $
-                            {shift.totalSales.toFixed(
-                              2
-                            )}
-                          </p>
-                        </div>
-
-                        <div>
-                          <p className="text-gray-500">
-                            Tips
-                          </p>
-
-                          <p className="font-medium">
-                            $
-                            {metrics.netTips.toFixed(
-                              2
-                            )}
-                          </p>
-                        </div>
-
-                        <div>
-                          <p className="text-gray-500">
-                            Earnings
-                          </p>
-
-                          <p className="font-medium">
-                            $
-                            {metrics.totalEarnings.toFixed(
-                              2
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          )}
+                  })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* MOBILE FLOATING LOG SHIFT */}
+      <button
+        type="button"
+        onClick={() =>
+          setShowShiftForm(true)
+        }
+        className="fixed bottom-5 right-4 z-30 flex items-center gap-1.5 rounded-full bg-navy px-4 py-3 text-sm font-semibold text-white shadow-xl transition active:scale-95 md:hidden"
+      >
+        <Plus
+          size={18}
+          className="text-accent-red"
+        />
+
+        Log Shift
+      </button>
+
+      {/* MOBILE FILTER BOTTOM SHEET */}
+      {showFilters && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 md:hidden"
+          onClick={() =>
+            setShowFilters(false)
+          }
+        >
+          <div
+            className="absolute bottom-0 left-0 right-0 rounded-t-3xl bg-white p-5 shadow-2xl"
+            onClick={(event) =>
+              event.stopPropagation()
+            }
+          >
+            <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-silver" />
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+                  Dashboard
+                </p>
+
+                <h2 className="mt-1 text-lg font-bold text-navy">
+                  Options
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setShowFilters(false)
+                }
+                className="flex h-9 w-9 items-center justify-center rounded-lg bg-silver-light/60 text-navy"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-6">
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+                  Time Period
+                </p>
+
+                <TimeRangeSelector
+                  range={range}
+                  onChange={
+                    changeRange
+                  }
+                />
+              </div>
+
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+                  Tip Data
+                </p>
+
+                <CashTipsToggle
+                  includeCashTips={
+                    includeCashTips
+                  }
+                  onChange={
+                    setIncludeCashTips
+                  }
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setShowFilters(false)
+                }
+                className="w-full rounded-xl bg-navy py-3 text-sm font-semibold text-white"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LOG SHIFT MODAL */}
       {showShiftForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4">
+          <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white p-5 shadow-xl sm:max-w-2xl sm:rounded-2xl sm:p-6">
             <div className="mb-6 flex items-start justify-between">
               <div>
-                <h2 className="text-xl font-semibold">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+                  New Entry
+                </p>
+
+                <h2 className="mt-1 text-xl font-bold text-navy">
                   Log Shift
                 </h2>
 
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-muted">
                   Enter your shift
                   details.
                 </p>
@@ -468,9 +705,9 @@ export default function DashboardPage() {
                     false
                   )
                 }
-                className="rounded-lg px-3 py-1 text-xl text-gray-400 hover:bg-gray-100 hover:text-black"
+                className="flex h-9 w-9 items-center justify-center rounded-lg bg-silver-light/60 text-navy"
               >
-                ×
+                <X size={18} />
               </button>
             </div>
 
