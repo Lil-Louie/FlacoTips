@@ -29,6 +29,10 @@ import {
   getShiftMetrics,
   getSummaryMetrics,
   movePeriod,
+  getMetricChartData,
+  getMetricChange,
+  getPreviousPeriodDate,
+  type ChartMetric,
   type Shift,
   type TimeRange,
 } from "@/lib/analytics";
@@ -68,6 +72,11 @@ export default function DashboardPage() {
 
   const [includeCashTips, setIncludeCashTips] =
     useState(true);
+
+  const [chartMetric, setChartMetric] =
+  useState<ChartMetric>(
+    "earnings"
+  );
 
   async function loadShifts() {
     setLoading(true);
@@ -250,32 +259,117 @@ export default function DashboardPage() {
     ]
   );
 
+  const previousAnchorDate =
+  useMemo(
+    () =>
+      getPreviousPeriodDate(
+        range,
+        anchorDate
+      ),
+    [range, anchorDate]
+  );
+
+const previousShifts =
+  useMemo(
+    () =>
+      filterShiftsByPeriod(
+        shifts,
+        range,
+        previousAnchorDate
+      ),
+    [
+      shifts,
+      range,
+      previousAnchorDate,
+    ]
+  );
+
+const previousSummary =
+  useMemo(
+    () =>
+      getSummaryMetrics(
+        previousShifts,
+        includeCashTips
+      ),
+    [
+      previousShifts,
+      includeCashTips,
+    ]
+  );
+
+  const earningsComparison =
+  useMemo(
+    () =>
+      getMetricChange(
+        summary.totalEarnings,
+        previousSummary.totalEarnings
+      ),
+    [
+      summary.totalEarnings,
+      previousSummary.totalEarnings,
+    ]
+  );
+
+const earningsPerHourComparison =
+  useMemo(
+    () =>
+      getMetricChange(
+        summary.earningsPerHour,
+        previousSummary.earningsPerHour
+      ),
+    [
+      summary.earningsPerHour,
+      previousSummary.earningsPerHour,
+    ]
+  );
+
+const tipComparison =
+  useMemo(
+    () =>
+      getMetricChange(
+        summary.tipPercentage,
+        previousSummary.tipPercentage
+      ),
+    [
+      summary.tipPercentage,
+      previousSummary.tipPercentage,
+    ]
+  );
+
+const tablesComparison =
+  useMemo(
+    () =>
+      getMetricChange(
+        summary.totalTables,
+        previousSummary.totalTables
+      ),
+    [
+      summary.totalTables,
+      previousSummary.totalTables,
+    ]
+  );
+
+  const comparisonLabel =
+  range === "day"
+    ? "yesterday"
+    : range === "week"
+      ? "last week"
+      : range === "month"
+        ? "last month"
+        : "last year";
+
   const chartData = useMemo(
     () =>
-      filteredShifts.map((shift) => {
-        const metrics =
-          getShiftMetrics(
-            shift,
-            includeCashTips
-          );
-
-        return {
-          label: new Date(
-            `${shift.date}T12:00:00`
-          ).toLocaleDateString(
-            "en-US",
-            {
-              month: "short",
-              day: "numeric",
-            }
-          ),
-
-          earnings:
-            metrics.totalEarnings,
-        };
-      }),
+      getMetricChartData(
+        filteredShifts,
+        range,
+        chartMetric,
+        includeCashTips
+      ),
     [
       filteredShifts,
+      range,
+      chartMetric,
       includeCashTips,
     ]
   );
@@ -470,9 +564,13 @@ export default function DashboardPage() {
             </p>
           </div>
         ) : filteredShifts.length > 0 ? (
-          <AnalyticsChart
-            data={chartData}
-          />
+        <AnalyticsChart
+          data={chartData}
+          metric={chartMetric}
+          onMetricChange={
+            setChartMetric
+          }
+        />
         ) : (
           <div className="flex h-[360px] items-center justify-center rounded-2xl border border-silver-light bg-white">
             <p className="text-muted">
@@ -494,6 +592,26 @@ export default function DashboardPage() {
           }
           totalTables={
             summary.totalTables
+          }
+
+          earningsComparison={
+            earningsComparison
+          }
+
+          earningsPerHourComparison={
+            earningsPerHourComparison
+          }
+
+          tipComparison={
+            tipComparison
+          }
+
+          tablesComparison={
+            tablesComparison
+          }
+
+          comparisonLabel={
+            comparisonLabel
           }
         />
 
@@ -795,9 +913,11 @@ export default function DashboardPage() {
 
       {/* LOG / EDIT SHIFT MODAL */}
       {showShiftForm && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4">
-          <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white p-5 shadow-xl sm:max-w-2xl sm:rounded-2xl sm:p-6">
-            <div className="mb-6 flex items-start justify-between">
+        <div className="fixed inset-0 z-50 bg-black/40">
+          <div className="absolute inset-x-0 bottom-0 flex max-h-[92dvh] flex-col rounded-t-3xl bg-white shadow-2xl sm:inset-auto sm:left-1/2 sm:top-1/2 sm:w-full sm:max-w-2xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl">
+            
+            {/* Fixed header */}
+            <div className="flex shrink-0 items-start justify-between border-b border-silver-light px-5 py-5 sm:px-6">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
                   {editingShift
@@ -821,74 +941,67 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setShowShiftForm(
-                    false
-                  );
-
-                  setEditingShift(
-                    null
-                  );
+                  setShowShiftForm(false);
+                  setEditingShift(null);
                 }}
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-silver-light/60 text-navy"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-silver-light/60 text-navy"
                 aria-label="Close"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <ShiftForm
-              key={
-                editingShift?.id ??
-                "new-shift"
-              }
-              mode={
-                editingShift
-                  ? "edit"
-                  : "create"
-              }
-              initialData={
-                editingShift
-                  ? {
-                      date:
-                        editingShift.date,
+            {/* Scrollable form area */}
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
+              <ShiftForm
+                key={
+                  editingShift?.id ??
+                  "new-shift"
+                }
+                mode={
+                  editingShift
+                    ? "edit"
+                    : "create"
+                }
+                initialData={
+                  editingShift
+                    ? {
+                        date:
+                          editingShift.date,
 
-                      shiftType:
-                        editingShift.shiftType,
+                        shiftType:
+                          editingShift.shiftType,
 
-                      hoursWorked:
-                        editingShift.hoursWorked,
+                        hoursWorked:
+                          editingShift.hoursWorked,
 
-                      tablesServed:
-                        editingShift.tablesServed,
+                        tablesServed:
+                          editingShift.tablesServed,
 
-                      totalSales:
-                        editingShift.totalSales,
+                        totalSales:
+                          editingShift.totalSales,
 
-                      creditTips:
-                        editingShift.creditTips,
+                        creditTips:
+                          editingShift.creditTips,
 
-                      cashTips:
-                        editingShift.cashTips,
+                        cashTips:
+                          editingShift.cashTips,
 
-                      tipOut:
-                        editingShift.tipOut,
+                        tipOut:
+                          editingShift.tipOut,
 
-                      hourlyWage:
-                        editingShift.hourlyWage,
-                    }
-                  : undefined
-              }
-              onSave={saveShift}
-              onCancel={() => {
-                setShowShiftForm(
-                  false
-                );
-
-                setEditingShift(
-                  null
-                );
-              }}
-            />
+                        hourlyWage:
+                          editingShift.hourlyWage,
+                      }
+                    : undefined
+                }
+                onSave={saveShift}
+                onCancel={() => {
+                  setShowShiftForm(false);
+                  setEditingShift(null);
+                }}
+              />
+            </div>
           </div>
         </div>
       )}

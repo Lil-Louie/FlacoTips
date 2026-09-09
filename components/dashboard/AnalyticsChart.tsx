@@ -10,45 +10,135 @@ import {
   YAxis,
 } from "recharts";
 
-type ChartPoint = {
-  label: string;
-  earnings: number;
-};
+import type {
+  ChartMetric,
+  ChartPoint,
+} from "@/lib/analytics";
 
 type Props = {
   data: ChartPoint[];
+  metric: ChartMetric;
+  onMetricChange: (
+    metric: ChartMetric
+  ) => void;
 };
+
+const metricOptions: {
+  value: ChartMetric;
+  label: string;
+}[] = [
+  {
+    value: "earnings",
+    label: "Earnings",
+  },
+  {
+    value: "tips",
+    label: "Tips",
+  },
+  {
+    value: "tipPercentage",
+    label: "Tip %",
+  },
+  {
+    value: "sales",
+    label: "Sales",
+  },
+  {
+    value: "tipsPerHour",
+    label: "Tips / Hour",
+  },
+  {
+    value: "earningsPerHour",
+    label: "Earnings / Hour",
+  },
+];
+
+function getMetricLabel(
+  metric: ChartMetric
+) {
+  return (
+    metricOptions.find(
+      (option) =>
+        option.value === metric
+    )?.label ?? "Earnings"
+  );
+}
+
+function formatValue(
+  value: number,
+  metric: ChartMetric
+) {
+  if (metric === "tipPercentage") {
+    return `${value.toFixed(1)}%`;
+  }
+
+  return `$${value.toFixed(2)}`;
+}
 
 export default function AnalyticsChart({
   data,
+  metric,
+  onMetricChange,
 }: Props) {
+  const metricLabel =
+    getMetricLabel(metric);
+
   return (
-    <div className="w-full rounded-2xl border border-silver-light bg-card p-6 shadow-sm">
-      <div className="mb-6 flex items-start justify-between gap-4">
+    <div className="w-full rounded-2xl border border-silver-light bg-card p-5 shadow-sm sm:p-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
             Performance
           </p>
 
           <h2 className="mt-1 text-xl font-bold tracking-tight text-navy">
-            Earnings
+            {metricLabel}
           </h2>
 
           <p className="mt-1 text-sm text-muted">
-            Earnings over the selected period
+            {metricLabel} over the
+            selected period
           </p>
         </div>
 
-        <div className="flex items-center gap-2 rounded-full border border-silver-light bg-silver-light/40 px-3 py-1.5">
-          <span className="h-2 w-2 rounded-full bg-accent-red" />
-          <span className="text-xs font-semibold text-navy">
-            Total Earnings
-          </span>
+        <div>
+          <label
+            htmlFor="chart-metric"
+            className="sr-only"
+          >
+            Chart metric
+          </label>
+
+          <select
+            id="chart-metric"
+            value={metric}
+            onChange={(event) =>
+              onMetricChange(
+                event.target
+                  .value as ChartMetric
+              )
+            }
+            className="w-full rounded-xl border border-silver-light bg-white px-3 py-2 text-sm font-semibold text-navy outline-none transition focus:border-navy sm:w-auto"
+          >
+            {metricOptions.map(
+              (option) => (
+                <option
+                  key={option.value}
+                  value={option.value}
+                >
+                  {option.label}
+                </option>
+              )
+            )}
+          </select>
         </div>
       </div>
 
-      <div className="h-[340px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="h-[320px] w-full sm:h-[340px]">
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+        >
           <LineChart
             data={data}
             margin={{
@@ -78,23 +168,37 @@ export default function AnalyticsChart({
             <YAxis
               tickLine={false}
               axisLine={false}
+              width={65}
               tick={{
                 fill: "#64748B",
                 fontSize: 12,
               }}
-              tickFormatter={(value) => `$${value}`}
-              width={60}
+              tickFormatter={(
+                value
+              ) =>
+                metric ===
+                "tipPercentage"
+                  ? `${value}%`
+                  : `$${value}`
+              }
             />
 
             <Tooltip
               cursor={{
                 stroke: "#B7BDC8",
-                strokeDasharray: "4 4",
+                strokeDasharray:
+                  "4 4",
               }}
               contentStyle={{
-                borderRadius: "12px",
-                border: "1px solid #E5E7EB",
-                backgroundColor: "#FFFFFF",
+                borderRadius:
+                  "12px",
+
+                border:
+                  "1px solid #E5E7EB",
+
+                backgroundColor:
+                  "#FFFFFF",
+
                 boxShadow:
                   "0 10px 25px rgba(15, 23, 42, 0.08)",
               }}
@@ -103,18 +207,18 @@ export default function AnalyticsChart({
                 fontWeight: 700,
                 marginBottom: "4px",
               }}
-              itemStyle={{
-                color: "#0B1F3A",
-              }}
               formatter={(value) => [
-                `$${Number(value).toFixed(2)}`,
-                "Earnings",
+                formatValue(
+                  Number(value),
+                  metric
+                ),
+                metricLabel,
               ]}
             />
 
             <Line
               type="monotone"
-              dataKey="earnings"
+              dataKey="value"
               stroke="#0B1F3A"
               strokeWidth={3}
               dot={{

@@ -104,15 +104,18 @@ export default function ShiftForm({
   }
 
   const inputClass =
-    "mt-1 w-full rounded-xl border border-silver-light bg-white px-3 py-2.5 text-navy outline-none transition focus:border-navy focus:ring-2 focus:ring-navy/10";
+    "mt-1 block w-full min-w-0 max-w-full rounded-xl border border-silver-light bg-white px-3 py-2.5 text-base text-navy outline-none transition focus:border-navy focus:ring-2 focus:ring-navy/10";
+
+  const labelClass =
+    "block min-w-0 text-sm font-medium text-navy";
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-5"
+      className="w-full min-w-0 max-w-full overflow-x-hidden space-y-5 pb-[env(safe-area-inset-bottom)]"
     >
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="text-sm font-medium text-navy">
+      <div className="grid w-full min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
+        <label className={labelClass}>
           Date
 
           <input
@@ -125,11 +128,11 @@ export default function ShiftForm({
                 e.target.value
               )
             }
-            className={inputClass}
+            className={`${inputClass} appearance-none`}
           />
         </label>
 
-        <label className="text-sm font-medium text-navy">
+        <label className={labelClass}>
           Shift
 
           <select
@@ -140,7 +143,7 @@ export default function ShiftForm({
                 e.target.value
               )
             }
-            className={inputClass}
+            className={`${inputClass} appearance-none`}
           >
             <option value="lunch">
               Lunch
@@ -156,7 +159,7 @@ export default function ShiftForm({
           </select>
         </label>
 
-        <label className="text-sm font-medium text-navy">
+        <label className={labelClass}>
           Hours Worked
 
           <input
@@ -176,7 +179,7 @@ export default function ShiftForm({
           />
         </label>
 
-        <label className="text-sm font-medium text-navy">
+        <label className={labelClass}>
           Tables Served
 
           <input
@@ -204,6 +207,7 @@ export default function ShiftForm({
             )
           }
           inputClass={inputClass}
+          labelClass={labelClass}
         />
 
         <MoneyInput
@@ -216,6 +220,7 @@ export default function ShiftForm({
             )
           }
           inputClass={inputClass}
+          labelClass={labelClass}
         />
 
         <MoneyInput
@@ -228,6 +233,7 @@ export default function ShiftForm({
             )
           }
           inputClass={inputClass}
+          labelClass={labelClass}
         />
 
         <MoneyInput
@@ -240,6 +246,7 @@ export default function ShiftForm({
             )
           }
           inputClass={inputClass}
+          labelClass={labelClass}
         />
 
         <MoneyInput
@@ -252,10 +259,11 @@ export default function ShiftForm({
             )
           }
           inputClass={inputClass}
+          labelClass={labelClass}
         />
       </div>
 
-      <div className="flex justify-end gap-3 border-t border-silver-light pt-5">
+      <div className="flex w-full justify-end gap-3 border-t border-silver-light pt-5">
         <button
           type="button"
           onClick={onCancel}
@@ -286,6 +294,7 @@ type MoneyInputProps = {
   value: string;
   onChange: (value: string) => void;
   inputClass: string;
+  labelClass: string;
 };
 
 function MoneyInput({
@@ -293,13 +302,14 @@ function MoneyInput({
   value,
   onChange,
   inputClass,
+  labelClass,
 }: MoneyInputProps) {
   return (
-    <label className="text-sm font-medium text-navy">
+    <label className={labelClass}>
       {label}
 
-      <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
+      <div className="relative w-full min-w-0">
+        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted">
           $
         </span>
 
