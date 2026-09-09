@@ -2,42 +2,53 @@
 
 import { FormEvent, useState } from "react";
 
-type ShiftFormData = {
-  date: string;
-  shiftType: "lunch" | "dinner" | "double";
-  hoursWorked: number;
-  tablesServed: number;
-  totalSales: number;
-  creditTips: number;
-  cashTips: number;
-  tipOut: number;
-  hourlyWage: number;
-};
+import type { Shift } from "@/lib/analytics";
+
+type ShiftFormData = Omit<Shift, "id">;
 
 type Props = {
   onSave: (shift: ShiftFormData) => Promise<void>;
   onCancel: () => void;
+  initialData?: ShiftFormData;
+  mode?: "create" | "edit";
 };
 
 export default function ShiftForm({
   onSave,
   onCancel,
+  initialData,
+  mode = "create",
 }: Props) {
   const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
-    date: new Date().toISOString().slice(0, 10),
-    shiftType: "lunch" as
-      | "lunch"
-      | "dinner"
-      | "double",
-    hoursWorked: "",
-    tablesServed: "",
-    totalSales: "",
-    creditTips: "",
-    cashTips: "",
-    tipOut: "",
-    hourlyWage: "16.90",
+    date:
+      initialData?.date ??
+      new Date().toISOString().slice(0, 10),
+
+    shiftType:
+      initialData?.shiftType ?? "lunch",
+
+    hoursWorked:
+      initialData?.hoursWorked.toString() ?? "",
+
+    tablesServed:
+      initialData?.tablesServed.toString() ?? "",
+
+    totalSales:
+      initialData?.totalSales.toString() ?? "",
+
+    creditTips:
+      initialData?.creditTips.toString() ?? "",
+
+    cashTips:
+      initialData?.cashTips.toString() ?? "",
+
+    tipOut:
+      initialData?.tipOut.toString() ?? "",
+
+    hourlyWage:
+      initialData?.hourlyWage.toString() ?? "16.90",
   });
 
   function updateField(
@@ -61,7 +72,10 @@ export default function ShiftForm({
       await onSave({
         date: form.date,
 
-        shiftType: form.shiftType,
+        shiftType: form.shiftType as
+          | "lunch"
+          | "dinner"
+          | "double",
 
         hoursWorked:
           Number(form.hoursWorked) || 0,
@@ -90,7 +104,7 @@ export default function ShiftForm({
   }
 
   const inputClass =
-    "mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 outline-none transition focus:border-black";
+    "mt-1 w-full rounded-xl border border-silver-light bg-white px-3 py-2.5 text-navy outline-none transition focus:border-navy focus:ring-2 focus:ring-navy/10";
 
   return (
     <form
@@ -98,7 +112,7 @@ export default function ShiftForm({
       className="space-y-5"
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className="text-sm font-medium">
+        <label className="text-sm font-medium text-navy">
           Date
 
           <input
@@ -106,13 +120,16 @@ export default function ShiftForm({
             required
             value={form.date}
             onChange={(e) =>
-              updateField("date", e.target.value)
+              updateField(
+                "date",
+                e.target.value
+              )
             }
             className={inputClass}
           />
         </label>
 
-        <label className="text-sm font-medium">
+        <label className="text-sm font-medium text-navy">
           Shift
 
           <select
@@ -139,7 +156,7 @@ export default function ShiftForm({
           </select>
         </label>
 
-        <label className="text-sm font-medium">
+        <label className="text-sm font-medium text-navy">
           Hours Worked
 
           <input
@@ -159,7 +176,7 @@ export default function ShiftForm({
           />
         </label>
 
-        <label className="text-sm font-medium">
+        <label className="text-sm font-medium text-navy">
           Tables Served
 
           <input
@@ -177,137 +194,73 @@ export default function ShiftForm({
           />
         </label>
 
-        <label className="text-sm font-medium">
-          Total Sales
+        <MoneyInput
+          label="Total Sales"
+          value={form.totalSales}
+          onChange={(value) =>
+            updateField(
+              "totalSales",
+              value
+            )
+          }
+          inputClass={inputClass}
+        />
 
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-              $
-            </span>
+        <MoneyInput
+          label="Credit Tips"
+          value={form.creditTips}
+          onChange={(value) =>
+            updateField(
+              "creditTips",
+              value
+            )
+          }
+          inputClass={inputClass}
+        />
 
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="850.00"
-              value={form.totalSales}
-              onChange={(e) =>
-                updateField(
-                  "totalSales",
-                  e.target.value
-                )
-              }
-              className={`${inputClass} pl-7`}
-            />
-          </div>
-        </label>
+        <MoneyInput
+          label="Cash Tips"
+          value={form.cashTips}
+          onChange={(value) =>
+            updateField(
+              "cashTips",
+              value
+            )
+          }
+          inputClass={inputClass}
+        />
 
-        <label className="text-sm font-medium">
-          Credit Tips
+        <MoneyInput
+          label="Tip Out"
+          value={form.tipOut}
+          onChange={(value) =>
+            updateField(
+              "tipOut",
+              value
+            )
+          }
+          inputClass={inputClass}
+        />
 
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-              $
-            </span>
-
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="150.00"
-              value={form.creditTips}
-              onChange={(e) =>
-                updateField(
-                  "creditTips",
-                  e.target.value
-                )
-              }
-              className={`${inputClass} pl-7`}
-            />
-          </div>
-        </label>
-
-        <label className="text-sm font-medium">
-          Cash Tips
-
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-              $
-            </span>
-
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="35.00"
-              value={form.cashTips}
-              onChange={(e) =>
-                updateField(
-                  "cashTips",
-                  e.target.value
-                )
-              }
-              className={`${inputClass} pl-7`}
-            />
-          </div>
-        </label>
-
-        <label className="text-sm font-medium">
-          Tip Out
-
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-              $
-            </span>
-
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="20.00"
-              value={form.tipOut}
-              onChange={(e) =>
-                updateField(
-                  "tipOut",
-                  e.target.value
-                )
-              }
-              className={`${inputClass} pl-7`}
-            />
-          </div>
-        </label>
-
-        <label className="text-sm font-medium">
-          Hourly Wage
-
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-              $
-            </span>
-
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={form.hourlyWage}
-              onChange={(e) =>
-                updateField(
-                  "hourlyWage",
-                  e.target.value
-                )
-              }
-              className={`${inputClass} pl-7`}
-            />
-          </div>
-        </label>
+        <MoneyInput
+          label="Hourly Wage"
+          value={form.hourlyWage}
+          onChange={(value) =>
+            updateField(
+              "hourlyWage",
+              value
+            )
+          }
+          inputClass={inputClass}
+        />
       </div>
 
-      <div className="flex justify-end gap-3 border-t pt-5">
+      <div className="flex justify-end gap-3 border-t border-silver-light pt-5">
         <button
           type="button"
           onClick={onCancel}
           disabled={saving}
-          className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+          className="rounded-xl border border-silver-light px-4 py-2.5 text-sm font-semibold text-navy transition hover:bg-silver-light/30 disabled:opacity-50"
         >
           Cancel
         </button>
@@ -315,13 +268,52 @@ export default function ShiftForm({
         <button
           type="submit"
           disabled={saving}
-          className="rounded-lg bg-black px-5 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+          className="rounded-xl bg-navy px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-light disabled:opacity-50"
         >
           {saving
             ? "Saving..."
-            : "Save Shift"}
+            : mode === "edit"
+              ? "Save Changes"
+              : "Save Shift"}
         </button>
       </div>
     </form>
+  );
+}
+
+type MoneyInputProps = {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  inputClass: string;
+};
+
+function MoneyInput({
+  label,
+  value,
+  onChange,
+  inputClass,
+}: MoneyInputProps) {
+  return (
+    <label className="text-sm font-medium text-navy">
+      {label}
+
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
+          $
+        </span>
+
+        <input
+          type="number"
+          step="0.01"
+          min="0"
+          value={value}
+          onChange={(e) =>
+            onChange(e.target.value)
+          }
+          className={`${inputClass} pl-7`}
+        />
+      </div>
+    </label>
   );
 }

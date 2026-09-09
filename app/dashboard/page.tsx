@@ -10,8 +10,10 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Pencil,
   Plus,
   SlidersHorizontal,
+  Trash2,
   X,
 } from "lucide-react";
 
@@ -51,6 +53,12 @@ export default function DashboardPage() {
   const [error, setError] = useState<
     string | null
   >(null);
+
+  const [editingShift, setEditingShift] =
+    useState<Shift | null>(null);
+
+  const [deletingShiftId, setDeletingShiftId] =
+    useState<string | null>(null);
 
   const [range, setRange] =
     useState<TimeRange>("week");
@@ -131,31 +139,47 @@ export default function DashboardPage() {
   ) {
     setError(null);
 
-    const { error } = await supabase
-      .from("shifts")
-      .insert({
-        date: shift.date,
-        shift_type: shift.shiftType,
-        hours_worked: shift.hoursWorked,
-        tables_served: shift.tablesServed,
-        total_sales: shift.totalSales,
-        credit_tips: shift.creditTips,
-        cash_tips: shift.cashTips,
-        tip_out: shift.tipOut,
-        hourly_wage: shift.hourlyWage,
-      });
+    const databaseShift = {
+      date: shift.date,
+      shift_type: shift.shiftType,
+      hours_worked: shift.hoursWorked,
+      tables_served: shift.tablesServed,
+      total_sales: shift.totalSales,
+      credit_tips: shift.creditTips,
+      cash_tips: shift.cashTips,
+      tip_out: shift.tipOut,
+      hourly_wage: shift.hourlyWage,
+    };
+
+    let request;
+
+    if (editingShift) {
+      request = supabase
+        .from("shifts")
+        .update(databaseShift)
+        .eq("id", editingShift.id);
+    } else {
+      request = supabase
+        .from("shifts")
+        .insert(databaseShift);
+    }
+
+    const { error } = await request;
 
     if (error) {
       console.error(error);
 
       setError(
-        "Could not save your shift."
+        editingShift
+          ? "Could not update your shift."
+          : "Could not save your shift."
       );
 
       throw error;
     }
 
     setShowShiftForm(false);
+    setEditingShift(null);
 
     setAnchorDate(
       new Date(
@@ -164,6 +188,44 @@ export default function DashboardPage() {
     );
 
     await loadShifts();
+  }
+
+  async function deleteShift(
+    shift: Shift
+  ) {
+    const confirmed =
+      window.confirm(
+        `Delete your ${shift.shiftType} shift from ${new Date(
+          `${shift.date}T12:00:00`
+        ).toLocaleDateString()}?`
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingShiftId(shift.id);
+    setError(null);
+
+    const { error } = await supabase
+      .from("shifts")
+      .delete()
+      .eq("id", shift.id);
+
+    if (error) {
+      console.error(error);
+
+      setError(
+        "Could not delete your shift."
+      );
+
+      setDeletingShiftId(null);
+      return;
+    }
+
+    await loadShifts();
+
+    setDeletingShiftId(null);
   }
 
   const filteredShifts = useMemo(
@@ -265,9 +327,10 @@ export default function DashboardPage() {
           {/* DESKTOP LOG SHIFT */}
           <button
             type="button"
-            onClick={() =>
-              setShowShiftForm(true)
-            }
+            onClick={() => {
+              setEditingShift(null);
+              setShowShiftForm(true);
+            }}
             className="hidden items-center gap-2 rounded-xl bg-navy px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-navy-light md:flex"
           >
             <Plus
@@ -477,11 +540,12 @@ export default function DashboardPage() {
           <div
             className={`overflow-hidden border-t border-silver-light transition-all duration-300 ${
               showHistory
-                ? "max-h-[2000px] opacity-100"
+                ? "max-h-[3000px] opacity-100"
                 : "max-h-0 border-t-0 opacity-0"
             }`}
           >
-            {filteredShifts.length === 0 ? (
+            {filteredShifts.length ===
+            0 ? (
               <div className="p-8 text-center text-muted">
                 No shifts for this period.
               </div>
@@ -504,7 +568,9 @@ export default function DashboardPage() {
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <p className="font-semibold capitalize text-navy">
-                              {shift.shiftType}
+                              {
+                                shift.shiftType
+                              }
                             </p>
 
                             <p className="mt-0.5 text-xs text-muted">
@@ -514,17 +580,59 @@ export default function DashboardPage() {
                             </p>
                           </div>
 
-                          <div className="text-right">
-                            <p className="text-lg font-bold text-navy">
-                              $
-                              {metrics.totalEarnings.toFixed(
-                                2
-                              )}
-                            </p>
+                          <div className="flex items-start gap-3">
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-navy">
+                                $
+                                {metrics.totalEarnings.toFixed(
+                                  2
+                                )}
+                              </p>
 
-                            <p className="text-[11px] text-muted">
-                              earned
-                            </p>
+                              <p className="text-[11px] text-muted">
+                                earned
+                              </p>
+                            </div>
+
+                            <div className="flex gap-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingShift(
+                                    shift
+                                  );
+
+                                  setShowShiftForm(
+                                    true
+                                  );
+                                }}
+                                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition hover:bg-silver-light/50 hover:text-navy"
+                                aria-label="Edit shift"
+                              >
+                                <Pencil
+                                  size={15}
+                                />
+                              </button>
+
+                              <button
+                                type="button"
+                                disabled={
+                                  deletingShiftId ===
+                                  shift.id
+                                }
+                                onClick={() =>
+                                  deleteShift(
+                                    shift
+                                  )
+                                }
+                                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition hover:bg-red-50 hover:text-accent-red disabled:opacity-40"
+                                aria-label="Delete shift"
+                              >
+                                <Trash2
+                                  size={15}
+                                />
+                              </button>
+                            </div>
                           </div>
                         </div>
 
@@ -535,7 +643,9 @@ export default function DashboardPage() {
                             </p>
 
                             <p className="mt-1 font-semibold text-navy">
-                              {shift.hoursWorked}
+                              {
+                                shift.hoursWorked
+                              }
                             </p>
                           </div>
 
@@ -545,7 +655,10 @@ export default function DashboardPage() {
                             </p>
 
                             <p className="mt-1 font-semibold text-navy">
-                              ${shift.totalSales.toFixed(2)}
+                              $
+                              {shift.totalSales.toFixed(
+                                2
+                              )}
                             </p>
                           </div>
 
@@ -555,7 +668,10 @@ export default function DashboardPage() {
                             </p>
 
                             <p className="mt-1 font-semibold text-navy">
-                              ${metrics.netTips.toFixed(2)}
+                              $
+                              {metrics.netTips.toFixed(
+                                2
+                              )}
                             </p>
                           </div>
 
@@ -584,9 +700,10 @@ export default function DashboardPage() {
       {/* MOBILE FLOATING LOG SHIFT */}
       <button
         type="button"
-        onClick={() =>
-          setShowShiftForm(true)
-        }
+        onClick={() => {
+          setEditingShift(null);
+          setShowShiftForm(true);
+        }}
         className="fixed bottom-5 right-4 z-30 flex items-center gap-1.5 rounded-full bg-navy px-4 py-3 text-sm font-semibold text-white shadow-xl transition active:scale-95 md:hidden"
       >
         <Plus
@@ -643,9 +760,7 @@ export default function DashboardPage() {
 
                 <TimeRangeSelector
                   range={range}
-                  onChange={
-                    changeRange
-                  }
+                  onChange={changeRange}
                 />
               </div>
 
@@ -678,44 +793,101 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* LOG SHIFT MODAL */}
+      {/* LOG / EDIT SHIFT MODAL */}
       {showShiftForm && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4">
           <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white p-5 shadow-xl sm:max-w-2xl sm:rounded-2xl sm:p-6">
             <div className="mb-6 flex items-start justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
-                  New Entry
+                  {editingShift
+                    ? "Update Entry"
+                    : "New Entry"}
                 </p>
 
                 <h2 className="mt-1 text-xl font-bold text-navy">
-                  Log Shift
+                  {editingShift
+                    ? "Edit Shift"
+                    : "Log Shift"}
                 </h2>
 
                 <p className="mt-1 text-sm text-muted">
-                  Enter your shift
-                  details.
+                  {editingShift
+                    ? "Update your shift details."
+                    : "Enter your shift details."}
                 </p>
               </div>
 
               <button
                 type="button"
-                onClick={() =>
+                onClick={() => {
                   setShowShiftForm(
                     false
-                  )
-                }
+                  );
+
+                  setEditingShift(
+                    null
+                  );
+                }}
                 className="flex h-9 w-9 items-center justify-center rounded-lg bg-silver-light/60 text-navy"
+                aria-label="Close"
               >
                 <X size={18} />
               </button>
             </div>
 
             <ShiftForm
-              onSave={saveShift}
-              onCancel={() =>
-                setShowShiftForm(false)
+              key={
+                editingShift?.id ??
+                "new-shift"
               }
+              mode={
+                editingShift
+                  ? "edit"
+                  : "create"
+              }
+              initialData={
+                editingShift
+                  ? {
+                      date:
+                        editingShift.date,
+
+                      shiftType:
+                        editingShift.shiftType,
+
+                      hoursWorked:
+                        editingShift.hoursWorked,
+
+                      tablesServed:
+                        editingShift.tablesServed,
+
+                      totalSales:
+                        editingShift.totalSales,
+
+                      creditTips:
+                        editingShift.creditTips,
+
+                      cashTips:
+                        editingShift.cashTips,
+
+                      tipOut:
+                        editingShift.tipOut,
+
+                      hourlyWage:
+                        editingShift.hourlyWage,
+                    }
+                  : undefined
+              }
+              onSave={saveShift}
+              onCancel={() => {
+                setShowShiftForm(
+                  false
+                );
+
+                setEditingShift(
+                  null
+                );
+              }}
             />
           </div>
         </div>
