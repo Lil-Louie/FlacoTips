@@ -38,8 +38,11 @@ export default function ShiftForm({
     totalSales:
       initialData?.totalSales.toString() ?? "",
 
-    creditTips:
-      initialData?.creditTips.toString() ?? "",
+    cardTips:
+      initialData?.cardTips.toString() ?? "",
+
+    reportedTips:
+      initialData?.reportedTips.toString() ?? "",
 
     cashTips:
       initialData?.cashTips.toString() ?? "",
@@ -86,8 +89,11 @@ export default function ShiftForm({
         totalSales:
           Number(form.totalSales) || 0,
 
-        creditTips:
-          Number(form.creditTips) || 0,
+        cardTips:
+          Number(form.cardTips) || 0,
+
+        reportedTips:
+          Number(form.reportedTips) || 0,
 
         cashTips:
           Number(form.cashTips) || 0,
@@ -211,11 +217,24 @@ export default function ShiftForm({
         />
 
         <MoneyInput
-          label="Credit Tips"
-          value={form.creditTips}
+          label="Card Tips"
+          value={form.cardTips}
           onChange={(value) =>
             updateField(
-              "creditTips",
+              "cardTips",
+              value
+            )
+          }
+          inputClass={inputClass}
+          labelClass={labelClass}
+        />
+
+        <MoneyInput
+          label="Reported Tips"
+          value={form.reportedTips}
+          onChange={(value) =>
+            updateField(
+              "reportedTips",
               value
             )
           }

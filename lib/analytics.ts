@@ -22,8 +22,11 @@ export type Shift = {
   hoursWorked: number;
   tablesServed: number;
   totalSales: number;
-  creditTips: number;
+
+  cardTips: number;
+  reportedTips: number;
   cashTips: number;
+
   tipOut: number;
   hourlyWage: number;
 };
@@ -36,6 +39,7 @@ export type TimeRange =
 
 export type ChartMetric =
   | "earnings"
+  | "wages"
   | "tips"
   | "tipPercentage"
   | "sales"
@@ -51,9 +55,18 @@ export function getShiftMetrics(
   shift: Shift,
   includeCashTips: boolean
 ) {
+  /*
+   * Reported tips are deliberately NOT included here.
+   *
+   * Actual tips earned:
+   * Card Tips + optional Cash Tips
+   *
+   * Reported Tips are stored independently for
+   * payroll/tax tracking.
+   */
   const grossTips = includeCashTips
-    ? shift.creditTips + shift.cashTips
-    : shift.creditTips;
+    ? shift.cardTips + shift.cashTips
+    : shift.cardTips;
 
   const netTips =
     grossTips - shift.tipOut;
@@ -113,8 +126,20 @@ export function getSummaryMetrics(
       acc.totalNetTips +=
         metrics.netTips;
 
+      acc.totalWages +=
+        metrics.wageEarnings;
+
       acc.totalGrossTips +=
         metrics.grossTips;
+
+      acc.totalReportedTips +=
+        shift.reportedTips;
+
+      acc.totalCardTips +=
+        shift.cardTips;
+
+      acc.totalCashTips +=
+        shift.cashTips;
 
       acc.totalSales +=
         shift.totalSales;
@@ -131,6 +156,13 @@ export function getSummaryMetrics(
       totalEarnings: 0,
       totalNetTips: 0,
       totalGrossTips: 0,
+
+      totalWages: 0,
+
+      totalReportedTips: 0,
+      totalCardTips: 0,
+      totalCashTips: 0,
+
       totalSales: 0,
       totalHours: 0,
       totalTables: 0,
@@ -141,11 +173,23 @@ export function getSummaryMetrics(
     totalEarnings:
       totals.totalEarnings,
 
+    totalWages:
+      totals.totalWages,
+
     totalTips:
       totals.totalNetTips,
 
     totalGrossTips:
       totals.totalGrossTips,
+
+    totalReportedTips:
+      totals.totalReportedTips,
+
+    totalCardTips:
+      totals.totalCardTips,
+
+    totalCashTips:
+      totals.totalCashTips,
 
     totalSales:
       totals.totalSales,
@@ -452,6 +496,9 @@ function getSingleShiftMetricValue(
     case "earnings":
       return metrics.totalEarnings;
 
+    case "wages":
+      return metrics.wageEarnings;
+
     case "tips":
       return metrics.netTips;
 
@@ -478,6 +525,9 @@ function getSummaryMetricValue(
   switch (metric) {
     case "earnings":
       return summary.totalEarnings;
+
+    case "wages":
+      return summary.totalWages;
 
     case "tips":
       return summary.totalTips;
@@ -513,8 +563,11 @@ export function getMetricChange(
 ) {
   if (previous === 0) {
     return {
-      percent: current > 0 ? 100 : 0,
-      difference: current,
+      percent:
+        current > 0 ? 100 : 0,
+
+      difference:
+        current,
     };
   }
 
