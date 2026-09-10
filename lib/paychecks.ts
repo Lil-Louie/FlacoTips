@@ -8,6 +8,14 @@ import {
 
 import type { Shift } from "@/lib/analytics";
 
+export type TaxBreakdown = {
+  federalTax: number;
+  stateTax: number;
+  socialSecurity: number;
+  medicare: number;
+  otherDeductions: number;
+};
+
 export type Paycheck = {
   id: string;
 
@@ -18,13 +26,10 @@ export type Paycheck = {
   regularHours: number;
   grossWages: number;
 
-  reportedTips: number;
-
   federalTax: number;
   stateTax: number;
   socialSecurity: number;
   medicare: number;
-
   otherDeductions: number;
 
   netPay: number;
@@ -48,59 +53,138 @@ export function getPaycheckMetrics(
     totalTaxes +
     paycheck.otherDeductions;
 
-  const taxableGross =
-    paycheck.grossWages +
-    paycheck.reportedTips;
-
   const withholdingRate =
-    taxableGross > 0
+    paycheck.grossWages > 0
       ? totalDeductions /
-        taxableGross
+        paycheck.grossWages
       : 0;
 
   return {
     totalTaxes,
     totalDeductions,
-    taxableGross,
     withholdingRate,
   };
 }
 
-export function getAverageWithholdingRate(
+export function getAverageTaxRates(
   paychecks: Paycheck[]
 ) {
   if (paychecks.length === 0) {
-    return 0;
+    return {
+      federalRate: 0,
+      stateRate: 0,
+      socialSecurityRate: 0,
+      medicareRate: 0,
+      otherDeductionRate: 0,
+    };
   }
 
-  let totalTaxableGross = 0;
-  let totalDeductions = 0;
+  const totals = paychecks.reduce(
+    (acc, paycheck) => {
+      acc.gross +=
+        paycheck.grossWages;
 
-  for (const paycheck of paychecks) {
-    const metrics =
-      getPaycheckMetrics(paycheck);
+      acc.federal +=
+        paycheck.federalTax;
 
-    totalTaxableGross +=
-      metrics.taxableGross;
+      acc.state +=
+        paycheck.stateTax;
 
-    totalDeductions +=
-      metrics.totalDeductions;
+      acc.socialSecurity +=
+        paycheck.socialSecurity;
+
+      acc.medicare +=
+        paycheck.medicare;
+
+      acc.other +=
+        paycheck.otherDeductions;
+
+      return acc;
+    },
+    {
+      gross: 0,
+      federal: 0,
+      state: 0,
+      socialSecurity: 0,
+      medicare: 0,
+      other: 0,
+    }
+  );
+
+  if (totals.gross === 0) {
+    return {
+      federalRate: 0,
+      stateRate: 0,
+      socialSecurityRate: 0,
+      medicareRate: 0,
+      otherDeductionRate: 0,
+    };
   }
 
-  return totalTaxableGross > 0
-    ? totalDeductions /
-        totalTaxableGross
-    : 0;
+  return {
+    federalRate:
+      totals.federal /
+      totals.gross,
+
+    stateRate:
+      totals.state /
+      totals.gross,
+
+    socialSecurityRate:
+      totals.socialSecurity /
+      totals.gross,
+
+    medicareRate:
+      totals.medicare /
+      totals.gross,
+
+    otherDeductionRate:
+      totals.other /
+      totals.gross,
+  };
 }
 
-export function estimateNetPay(
-  grossPay: number,
-  withholdingRate: number
+export function estimateTaxes(
+  grossWages: number,
+  rates: ReturnType<
+    typeof getAverageTaxRates
+  >
+): TaxBreakdown {
+  return {
+    federalTax:
+      grossWages *
+      rates.federalRate,
+
+    stateTax:
+      grossWages *
+      rates.stateRate,
+
+    socialSecurity:
+      grossWages *
+      rates.socialSecurityRate,
+
+    medicare:
+      grossWages *
+      rates.medicareRate,
+
+    otherDeductions:
+      grossWages *
+      rates.otherDeductionRate,
+  };
+}
+
+export function estimateNetPaycheck(
+  grossWages: number,
+  taxes: TaxBreakdown
 ) {
-  return (
-    grossPay *
-    (1 - withholdingRate)
-  );
+  const deductions =
+    taxes.federalTax +
+    taxes.stateTax +
+    taxes.socialSecurity +
+    taxes.medicare +
+    taxes.otherDeductions;
+
+  return grossWages - deductions;
 }
 
 export function getPayPeriod(
@@ -153,13 +237,12 @@ export function getShiftsForPayPeriod(
 
   return shifts.filter(
     (shift) => {
-      const shiftDate =
-        new Date(
-          `${shift.date}T12:00:00`
-        );
+      const date = new Date(
+        `${shift.date}T12:00:00`
+      );
 
       return isWithinInterval(
-        shiftDate,
+        date,
         {
           start,
           end,
