@@ -1,142 +1,195 @@
 import {
-    addDays,
-    format,
-    startOfWeek,
-  } from "date-fns";
-  
-  import {
-    getShiftMetrics,
-    getSummaryMetrics,
-    type ChartMetric,
-    type Shift,
-  } from "@/lib/analytics";
-  
-  import { formatMetricValue } from "./AnalyticsChart";
-  
-  type Props = {
-    shifts: Shift[];
-    anchorDate: Date;
-    includeCashTips: boolean;
-    metric: ChartMetric;
-  };
-  
-  export default function WeeklyOverview({
-    shifts,
-    anchorDate,
-    includeCashTips,
-    metric,
-  }: Props) {
-    const monday = startOfWeek(
+  addDays,
+  format,
+  startOfWeek,
+} from "date-fns";
+
+import {
+  getSummaryMetrics,
+  type ChartMetric,
+  type Shift,
+} from "@/lib/analytics";
+
+type Props = {
+  shifts: Shift[];
+  anchorDate: Date;
+  includeCashTips: boolean;
+  metric: ChartMetric;
+};
+
+export default function WeeklyOverview({
+  shifts,
+  anchorDate,
+  includeCashTips,
+  metric,
+}: Props) {
+  const monday =
+    startOfWeek(
       anchorDate,
       {
         weekStartsOn: 1,
       }
     );
-  
-    const days = Array.from(
-      { length: 7 },
+
+  const days =
+    Array.from(
+      {
+        length: 7,
+      },
       (_, index) =>
-        addDays(monday, index)
+        addDays(
+          monday,
+          index
+        )
     );
-  
-    return (
-      <div className="overflow-x-auto rounded-2xl border border-silver-light bg-white shadow-sm">
-        <div className="grid min-w-[700px] grid-cols-7 divide-x divide-silver-light">
-          {days.map((day) => {
+
+  return (
+    <div className="rounded-2xl border border-silver-light bg-white p-4 shadow-sm sm:p-5">
+      <div className="mb-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+          Weekly Overview
+        </p>
+
+        <h2 className="mt-1 font-semibold text-navy">
+          Daily Breakdown
+        </h2>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+        {days.map(
+          (day) => {
             const key =
               format(
                 day,
                 "yyyy-MM-dd"
               );
-  
+
             const dayShifts =
               shifts.filter(
                 (shift) =>
-                  shift.date === key
+                  shift.date ===
+                  key
               );
-  
+
             const summary =
               getSummaryMetrics(
                 dayShifts,
                 includeCashTips
               );
-  
-            let value = 0;
-  
-            switch (metric) {
-              case "earnings":
-                value =
-                  summary.totalEarnings;
-                break;
-  
-              case "wages":
-                value =
-                  summary.totalWages;
-                break;
-  
-              case "tips":
-                value =
-                  summary.totalTips;
-                break;
-  
-              case "tipPercentage":
-                value =
-                  summary.tipPercentage;
-                break;
-  
-              case "sales":
-                value =
-                  summary.totalSales;
-                break;
-  
-              case "tipsPerHour":
-                value =
-                  summary.tipsPerHour;
-                break;
-  
-              case "earningsPerHour":
-                value =
-                  summary.earningsPerHour;
-                break;
-            }
-  
+
+            const value =
+              getMetricValue(
+                summary,
+                metric
+              );
+
+            const hasShift =
+              dayShifts.length >
+              0;
+
             return (
               <div
                 key={key}
-                className="min-h-[140px] p-4"
+                className="rounded-xl border border-silver-light bg-background p-3"
               >
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                  {format(day, "EEE")}
-                </p>
-  
-                <p className="mt-1 text-sm font-semibold text-navy">
-                  {format(day, "MMM d")}
-                </p>
-  
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+                      {format(
+                        day,
+                        "EEE"
+                      )}
+                    </p>
+
+                    <p className="mt-0.5 text-sm font-semibold text-navy">
+                      {format(
+                        day,
+                        "MMM d"
+                      )}
+                    </p>
+                  </div>
+
+                  {hasShift && (
+                    <span className="mt-1 h-2 w-2 rounded-full bg-accent-red" />
+                  )}
+                </div>
+
                 <p className="mt-4 text-lg font-bold text-navy">
-                  {dayShifts.length
-                    ? formatMetricValue(
+                  {hasShift
+                    ? formatMetric(
                         value,
                         metric
                       )
                     : "—"}
                 </p>
-  
-                {dayShifts.length >
-                  0 && (
-                  <p className="mt-2 text-xs capitalize text-muted">
-                    {dayShifts
-                      .map(
-                        (shift) =>
-                          shift.shiftType
-                      )
-                      .join(", ")}
-                  </p>
-                )}
+
+                <p className="mt-1 text-[11px] capitalize text-muted">
+                  {hasShift
+                    ? dayShifts
+                        .map(
+                          (
+                            shift
+                          ) =>
+                            shift.shiftType
+                        )
+                        .join(
+                          ", "
+                        )
+                    : "No shift"}
+                </p>
               </div>
             );
-          })}
-        </div>
+          }
+        )}
       </div>
-    );
+    </div>
+  );
+}
+
+function getMetricValue(
+  summary: ReturnType<
+    typeof getSummaryMetrics
+  >,
+  metric: ChartMetric
+) {
+  switch (metric) {
+    case "earnings":
+      return summary.totalEarnings;
+
+    case "wages":
+      return summary.totalWages;
+
+    case "tips":
+      return summary.totalTips;
+
+    case "tipPercentage":
+      return summary.tipPercentage;
+
+    case "sales":
+      return summary.totalSales;
+
+    case "tipsPerHour":
+      return summary.tipsPerHour;
+
+    case "earningsPerHour":
+      return summary.earningsPerHour;
   }
+}
+
+function formatMetric(
+  value: number,
+  metric: ChartMetric
+) {
+  if (
+    metric ===
+    "tipPercentage"
+  ) {
+    return `${value.toFixed(
+      1
+    )}%`;
+  }
+
+  return `$${value.toFixed(
+    2
+  )}`;
+}

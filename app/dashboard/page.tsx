@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 
 import AnalyticsChart from "@/components/dashboard/AnalyticsChart";
-import type { ChartStyle } from "@/components/dashboard/AnalyticsChart";
 
 import CashTipsToggle from "@/components/dashboard/CashTipsToggle";
 import DailySummary from "@/components/dashboard/DailySummary";
@@ -95,8 +94,6 @@ export default function DashboardPage() {
   const [chartMetric, setChartMetric] =
     useState<ChartMetric>("earnings");
 
-  const [chartStyle, setChartStyle] =
-    useState<ChartStyle>("line");
 
   const [
     payPeriodAnchor,
@@ -614,12 +611,6 @@ export default function DashboardPage() {
               setChartMetric={
                 setChartMetric
               }
-              chartStyle={
-                chartStyle
-              }
-              setChartStyle={
-                setChartStyle
-              }
             />
 
             <MetricCards
@@ -777,12 +768,6 @@ export default function DashboardPage() {
                 setChartMetric={
                   setChartMetric
                 }
-                chartStyle={
-                  chartStyle
-                }
-                setChartStyle={
-                  setChartStyle
-                }
               />
             ) : loading ? (
               <SimpleLoading />
@@ -902,12 +887,6 @@ export default function DashboardPage() {
               }
               setChartMetric={
                 setChartMetric
-              }
-              chartStyle={
-                chartStyle
-              }
-              setChartStyle={
-                setChartStyle
               }
             />
 
@@ -1279,10 +1258,6 @@ type ChartSectionProps = {
   setChartMetric: (
     metric: ChartMetric
   ) => void;
-  chartStyle: ChartStyle;
-  setChartStyle: (
-    style: ChartStyle
-  ) => void;
 };
 
 function ChartSection({
@@ -1291,8 +1266,6 @@ function ChartSection({
   chartData,
   chartMetric,
   setChartMetric,
-  chartStyle,
-  setChartStyle,
 }: ChartSectionProps) {
   if (loading) {
     return (
@@ -1318,12 +1291,6 @@ function ChartSection({
       metric={chartMetric}
       onMetricChange={
         setChartMetric
-      }
-      chartStyle={
-        chartStyle
-      }
-      onChartStyleChange={
-        setChartStyle
       }
     />
   );

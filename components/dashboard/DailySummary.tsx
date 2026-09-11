@@ -11,10 +11,6 @@ import {
   type Shift,
 } from "@/lib/analytics";
 
-import {
-  formatMetricValue,
-  getMetricLabel,
-} from "./AnalyticsChart";
 
 type Props = {
   shifts: Shift[];
@@ -53,6 +49,8 @@ export default function DailySummary({
           );
 
         let heroValue = 0;
+        const netCardTips =
+          shift.cardTips - shift.tipOut;
 
         switch (metric) {
           case "earnings":
@@ -140,67 +138,92 @@ export default function DailySummary({
                 </button>
               </div>
             </div>
-
             <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
               <Stat
-                label="Hours"
-                value={shift.hoursWorked.toFixed(
-                  2
-                )}
-              />
-
-              <Stat
                 label="Sales"
-                value={`$${shift.totalSales.toFixed(
-                  2
-                )}`}
+                value={`$${shift.totalSales.toFixed(2)}`}
               />
 
               <Stat
-                label="Tips"
-                value={`$${metrics.netTips.toFixed(
-                  2
-                )}`}
+                label="Total Earnings"
+                value={`$${metrics.totalEarnings.toFixed(2)}`}
               />
 
               <Stat
-                label="Tip %"
-                value={`${metrics.tipPercentage.toFixed(
-                  1
-                )}%`}
+                label="Wage"
+                value={`$${metrics.wageEarnings.toFixed(2)}`}
               />
 
               <Stat
-                label="Wages"
-                value={`$${metrics.wageEarnings.toFixed(
-                  2
-                )}`}
+                  label="Net Tips"
+                  value={`$${netCardTips.toFixed(2)}`}
+                />
+
+              <Stat
+                label="Cash Tips"
+                value={`$${shift.cashTips.toFixed(2)}`}
+              />
+
+              <Stat
+                label="Reported Tips"
+                value={`$${shift.reportedTips.toFixed(2)}`}
+              />
+
+              <Stat
+                label="Hours"
+                value={shift.hoursWorked.toFixed(2)}
               />
 
               <Stat
                 label="Tables"
                 value={shift.tablesServed.toString()}
               />
-
-              <Stat
-                label="Reported Tips"
-                value={`$${shift.reportedTips.toFixed(
-                  2
-                )}`}
-              />
-
-              <Stat
-                label="Total Earned"
-                value={`$${metrics.totalEarnings.toFixed(
-                  2
-                )}`}
-              />
-            </div>
+              </div>
           </div>
         );
       })}
     </div>
   );
+}
+
+function getMetricLabel(
+  metric: ChartMetric
+) {
+  switch (metric) {
+    case "earnings":
+      return "Earnings";
+
+    case "wages":
+      return "Wages";
+
+    case "tips":
+      return "Tips";
+
+    case "tipPercentage":
+      return "Tip %";
+
+    case "sales":
+      return "Sales";
+
+    case "tipsPerHour":
+      return "Tips / Hour";
+
+    case "earningsPerHour":
+      return "Earnings / Hour";
+  }
+}
+
+function formatMetricValue(
+  value: number,
+  metric: ChartMetric
+) {
+  if (
+    metric === "tipPercentage"
+  ) {
+    return `${value.toFixed(1)}%`;
+  }
+
+  return `$${value.toFixed(2)}`;
 }
 
 function Stat({
