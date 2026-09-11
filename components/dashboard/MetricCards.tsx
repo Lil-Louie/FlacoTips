@@ -78,7 +78,6 @@ export default function MetricCards({
           key={card.label}
           className="group relative overflow-hidden rounded-2xl border border-silver-light bg-card p-4 transition duration-200 hover:-translate-y-0.5 hover:border-silver hover:shadow-md"
         >
-          <div className="absolute left-0 top-0 h-full w-1 bg-navy" />
 
           {index === 0 && (
             <div className="absolute right-4 top-4 h-2 w-2 rounded-full bg-accent-red" />

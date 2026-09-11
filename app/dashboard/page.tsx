@@ -575,6 +575,55 @@ export default function DashboardPage() {
                 }
               />
             )}
+
+
+<PaycheckDropdown
+              open={
+                showPaycheck
+              }
+              onToggle={() =>
+                setShowPaycheck(
+                  (current) =>
+                    !current
+                )
+              }
+              label={
+                payPeriod.label
+              }
+            >
+              <PaycheckEstimate
+                payPeriodLabel={
+                  payPeriod.label
+                }
+                totalHours={
+                  paycheckSummary.totalHours
+                }
+                totalWages={
+                  paycheckSummary.totalWages
+                }
+                estimatedWithholdingRate={
+                  0.0895
+                }
+                onPreviousPeriod={() =>
+                  setPayPeriodAnchor(
+                    (date) =>
+                      movePayPeriod(
+                        date,
+                        -1
+                      )
+                  )
+                }
+                onNextPeriod={() =>
+                  setPayPeriodAnchor(
+                    (date) =>
+                      movePayPeriod(
+                        date,
+                        1
+                      )
+                  )
+                }
+              />
+            </PaycheckDropdown>
           </>
         )}
 
@@ -831,7 +880,9 @@ export default function DashboardPage() {
                     !current
                 )
               }
-              label="Weekly paycheck estimate"
+              label={
+                payPeriod.label
+              }
             >
               <PaycheckEstimate
                 payPeriodLabel={
@@ -1330,12 +1381,8 @@ function PaycheckDropdown({
       >
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
-            Paycheck
+            Predicted Paycheck
           </p>
-
-          <h2 className="mt-1 font-semibold text-navy">
-            Estimate
-          </h2>
 
           <p className="mt-1 text-xs text-muted">
             {label}

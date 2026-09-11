@@ -23,124 +23,104 @@ export default function WeeklyOverview({
   includeCashTips,
   metric,
 }: Props) {
-  const monday =
-    startOfWeek(
-      anchorDate,
-      {
-        weekStartsOn: 1,
-      }
-    );
+  const monday = startOfWeek(
+    anchorDate,
+    {
+      weekStartsOn: 1,
+    }
+  );
 
-  const days =
-    Array.from(
-      {
-        length: 7,
-      },
-      (_, index) =>
-        addDays(
-          monday,
-          index
-        )
-    );
+  const days = Array.from(
+    { length: 7 },
+    (_, index) =>
+      addDays(
+        monday,
+        index
+      )
+  );
 
   return (
-    <div className="rounded-2xl border border-silver-light bg-white p-4 shadow-sm sm:p-5">
+    <div className="rounded-2xl border border-silver-light bg-white p-3 shadow-sm sm:p-5">
       <div className="mb-4">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
           Weekly Overview
         </p>
-
-        <h2 className="mt-1 font-semibold text-navy">
-          Daily Breakdown
-        </h2>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-        {days.map(
-          (day) => {
-            const key =
-              format(
-                day,
-                "yyyy-MM-dd"
-              );
+      <div className="grid grid-cols-7 gap-1 sm:gap-2">
+        {days.map((day) => {
+          const key = format(
+            day,
+            "yyyy-MM-dd"
+          );
 
-            const dayShifts =
-              shifts.filter(
-                (shift) =>
-                  shift.date ===
-                  key
-              );
+          const dayShifts =
+            shifts.filter(
+              (shift) =>
+                shift.date === key
+            );
 
-            const summary =
-              getSummaryMetrics(
-                dayShifts,
-                includeCashTips
-              );
+          const summary =
+            getSummaryMetrics(
+              dayShifts,
+              includeCashTips
+            );
 
-            const value =
-              getMetricValue(
-                summary,
-                metric
-              );
+          const value =
+            getMetricValue(
+              summary,
+              metric
+            );
 
-            const hasShift =
-              dayShifts.length >
-              0;
+          const hasShift =
+            dayShifts.length > 0;
 
-            return (
+          return (
+            <div
+              key={key}
+              className="min-w-0 text-center"
+            >
+              {/* DAY */}
+              <p className="text-[9px] font-semibold uppercase tracking-wide text-muted sm:text-xs">
+                {format(day, "EEE")}
+              </p>
+
+              {/* DATE CIRCLE */}
               <div
-                key={key}
-                className="rounded-xl border border-silver-light bg-background p-3"
+                className={`mx-auto mt-1 flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold sm:h-10 sm:w-10 sm:text-sm ${
+                  hasShift
+                    ? "bg-navy text-white"
+                    : "bg-silver-light/50 text-muted"
+                }`}
               >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
-                      {format(
-                        day,
-                        "EEE"
-                      )}
-                    </p>
+                {format(day, "d")}
+              </div>
 
-                    <p className="mt-0.5 text-sm font-semibold text-navy">
-                      {format(
-                        day,
-                        "MMM d"
-                      )}
-                    </p>
-                  </div>
+              {/* TIME */}
+              <div className="mt-2 flex min-h-[28px] items-center justify-center rounded-md border border-silver-light bg-background px-0.5">
+                <span className="truncate text-[8px] font-medium text-muted sm:text-[10px]">
+                  {hasShift
+                    ? formatHours(
+                        summary.totalHours
+                      )
+                    : "—"}
+                </span>
+              </div>
 
-                  {hasShift && (
-                    <span className="mt-1 h-2 w-2 rounded-full bg-accent-red" />
-                  )}
-                </div>
-
-                <p className="mt-4 text-lg font-bold text-navy">
+              {/* METRIC */}
+              <div className="mt-1 flex min-h-[28px] items-center justify-center rounded-md border border-silver-light bg-background px-0.5">
+                <span className="truncate text-[8px] font-bold text-navy sm:text-[10px]">
                   {hasShift
                     ? formatMetric(
                         value,
                         metric
                       )
                     : "—"}
-                </p>
-
-                <p className="mt-1 text-[11px] capitalize text-muted">
-                  {hasShift
-                    ? dayShifts
-                        .map(
-                          (
-                            shift
-                          ) =>
-                            shift.shiftType
-                        )
-                        .join(
-                          ", "
-                        )
-                    : "No shift"}
-                </p>
+                </span>
               </div>
-            );
-          }
-        )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -181,15 +161,40 @@ function formatMetric(
   metric: ChartMetric
 ) {
   if (
-    metric ===
-    "tipPercentage"
+    metric === "tipPercentage"
   ) {
-    return `${value.toFixed(
-      1
-    )}%`;
+    return `${value.toFixed(1)}%`;
   }
 
-  return `$${value.toFixed(
-    2
-  )}`;
+  if (
+    metric === "tipsPerHour" ||
+    metric === "earningsPerHour"
+  ) {
+    return `$${value.toFixed(0)}/h`;
+  }
+
+  return `$${value.toFixed(0)}`;
+}
+
+function formatHours(
+  hours: number
+) {
+  const wholeHours =
+    Math.floor(hours);
+
+  const minutes =
+    Math.round(
+      (hours - wholeHours) *
+        60
+    );
+
+  if (wholeHours === 0) {
+    return `${minutes}m`;
+  }
+
+  if (minutes === 0) {
+    return `${wholeHours}h`;
+  }
+
+  return `${wholeHours}h ${minutes}m`;
 }

@@ -99,16 +99,7 @@ export default function AnalyticsChart({
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
-            Performance
-          </p>
-
-          <h2 className="mt-1 text-xl font-bold tracking-tight text-navy">
-            {metricLabel}
-          </h2>
-
-          <p className="mt-1 text-sm text-muted">
-            {metricLabel} over
-            the selected period
+          {metricLabel}
           </p>
         </div>
 
